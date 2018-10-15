@@ -1,0 +1,6 @@
+jupyterlab==0.34.12
+selenium==3.14.1
+pandas==0.23.1
+ipywidgets==7.4.2
+plotly==
+matplotlib==3.0.0
