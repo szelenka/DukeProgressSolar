@@ -3,18 +3,22 @@ import json
 import pandas as pd
 
 
-def merge_dataframes(df_mhe, df_pvw):
+def merge_dataframes(df_mhe: pd.core.frame.DataFrame, df_pvw: pd.core.frame.DataFrame, dc_ac_loss: float = 0.15):
     df = df_mhe.merge(df_pvw, on='month_int', how='outer').sort_values('date').dropna().reset_index(drop=True)
-    df['kwh_demand'] = df['avg_kwh_per_day'] / df['radiation_hours_per_day']
+    df['kwh_demand'] = df['avg_kwh_per_day'] * (1 + dc_ac_loss) / df['radiation_hours_per_day'] 
     
     return df
 
 
-def avg_month(df: pd.core.frame.DataFrame, solar_system_kwh: float = 6.32):
+def avg_month(df: pd.core.frame.DataFrame, solar_system_kwh: float = 6.32, dc_ac_loss: float = 0.15):
     # Duke Progress resets the year on May-31, meaning any unused credits before then are removed from the account
     m = df.groupby('month_int').agg('mean').reindex([6,7,8,9,10,11,12,1,2,3,4,5])
-    m['kwh_per_day_delta'] = m['avg_kwh_per_day'] - (m['radiation_hours_per_day'] * solar_system_kwh)
-    m['kwh_per_month_delta'] = (m['avg_kwh_per_day'] - (m['radiation_hours_per_day'] * solar_system_kwh)) * m['days']
+    m['kwh_per_day_delta'] = m['avg_kwh_per_day'] - (
+        m['radiation_hours_per_day'] * solar_system_kwh * (1 - dc_ac_loss)
+    )
+    m['kwh_per_month_delta'] = (
+        m['avg_kwh_per_day'] - (m['radiation_hours_per_day'] * solar_system_kwh * (1 - dc_ac_loss))
+    ) * m['days']
     
     return m
 
